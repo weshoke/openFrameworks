@@ -76,3 +76,18 @@ apps/addonsExamples/*/config.make
 *.pyc
 
 
+
+/apps/androidExamples/androidAssimpExample/Makefile
+/apps/androidExamples/androidAudioExample/Makefile
+/apps/androidExamples/androidCameraExample/Makefile
+/apps/androidExamples/androidEmptyExample/Makefile
+/apps/androidExamples/androidFontExample/Makefile
+/apps/androidExamples/androidImageExample/Makefile
+/apps/androidExamples/androidOpenCVExample/Makefile
+/apps/androidExamples/androidPolygonExample/Makefile
+/apps/androidExamples/androidSynthExample/Makefile
+/apps/androidExamples/androidTouchExample/Makefile
+/apps/androidExamples/androidVBOExample/Makefile
+/apps/devApps/linux/Makefile
+/apps/devApps/ofPathExample/Makefile
+/.gitignore
