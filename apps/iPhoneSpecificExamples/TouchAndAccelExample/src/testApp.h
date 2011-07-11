@@ -5,8 +5,6 @@
 #include "ofxiPhoneExtras.h"
 #include "Ball.h"
 
-#define NUM_POINTS				10
-
 class testApp : public ofxiPhoneApp {
 	
 public:
@@ -19,11 +17,16 @@ public:
 	void touchMoved(int x, int y, int id);
 	void touchUp(int x, int y, int id);
 	void touchDoubleTap(int x, int y, int id);
+	void touchCancelled(ofTouchEventArgs &touch);
 	
 	void lostFocus();
 	void gotFocus();
 	void gotMemoryWarning();
 	void deviceOrientationChanged(int newOrientation);
 	
-	Ball balls[NUM_POINTS];
+	void gotMessage(ofMessage msg);
+	
+	ofImage arrow;
+	
+	vector <Ball> balls;
 };

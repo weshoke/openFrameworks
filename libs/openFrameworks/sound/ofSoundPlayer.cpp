@@ -38,6 +38,8 @@ void ofSoundShutdown(){
 float * ofSoundGetSpectrum(int nBands){
 	#ifdef OF_SOUND_PLAYER_FMOD
 		return ofFmodSoundGetSpectrum(nBands);
+	#elif defined(OF_SOUND_PLAYER_OPENAL)
+		return ofOpenALSoundPlayer::getSystemSpectrum(nBands);
 	#else
 		ofLog(OF_LOG_ERROR, "ofSoundGetSpectrum returning NULL - no implementation!");
 		return NULL;
@@ -49,30 +51,16 @@ float * ofSoundGetSpectrum(int nBands){
 #include "ofSoundPlayer.h"
 //---------------------------------------------------------------------------
 ofSoundPlayer::ofSoundPlayer (){
-	player		= new OF_SOUND_PLAYER_TYPE;
+	player	= ofPtr<OF_SOUND_PLAYER_TYPE>(new OF_SOUND_PLAYER_TYPE);
 }
 
 //---------------------------------------------------------------------------
-ofSoundPlayer::~ofSoundPlayer(){
-	if( player != NULL ){
-		delete player;
-		player = NULL;
-	}
-}
-
-//---------------------------------------------------------------------------
-bool ofSoundPlayer::setPlayer(ofBaseSoundPlayer * newPlayer){
-	if( player == NULL ){
-		player = newPlayer;
-	}else{
-		delete player;
-		player = newPlayer;
-	}
-	return true;
+void ofSoundPlayer::setPlayer(ofPtr<ofBaseSoundPlayer> newPlayer){
+	player = newPlayer;
 }
 
 //--------------------------------------------------------------------
-ofBaseSoundPlayer * ofSoundPlayer::getPlayer(){
+ofPtr<ofBaseSoundPlayer> ofSoundPlayer::getPlayer(){
 	return player;
 }
 

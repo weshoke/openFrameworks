@@ -30,4 +30,6 @@ public:
 	ofVec3f center;
 	bool bShiny;
 	bool bPointLight, bSpotLight, bDirLight;
+	
+	
 };

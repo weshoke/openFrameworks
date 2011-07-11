@@ -54,6 +54,10 @@ ofAppiPhoneWindow::ofAppiPhoneWindow() {
 	if(_instance == NULL) _instance = this;
 	else ofLog(OF_LOG_ERROR, "Instanciating ofAppiPhoneWindow more than once! how come?");
 	nFrameCount = 0;
+	lastFrameTime = 0;
+	fps = frameRate = 60.0f;
+	timeNow = 0.0;
+	timeThen = 0.0;
 	bEnableSetupScreen = true;
 	
 	windowPos.set(NOT_INITIALIZED, NOT_INITIALIZED);
@@ -146,14 +150,14 @@ ofPoint	ofAppiPhoneWindow::getScreenSize() {
 }
 
 int ofAppiPhoneWindow::getWidth(){
-	if( orientation == OFXIPHONE_ORIENTATION_PORTRAIT || orientation == OFXIPHONE_ORIENTATION_UPSIDEDOWN ){
+	if( orientation == OF_ORIENTATION_DEFAULT || orientation == OF_ORIENTATION_180 ){
 		return (int)getScreenSize().x;
 	}
 	return (int)getScreenSize().y;
 }
 
 int ofAppiPhoneWindow::getHeight(){
-	if( orientation == OFXIPHONE_ORIENTATION_PORTRAIT || orientation == OFXIPHONE_ORIENTATION_UPSIDEDOWN ){
+	if( orientation == OF_ORIENTATION_DEFAULT || orientation == OF_ORIENTATION_180 ){
 		return (int)getScreenSize().y;
 	}
 	return (int)getScreenSize().x;
@@ -174,6 +178,10 @@ void ofAppiPhoneWindow::setFrameRate(float targetRate) {
 
 int	ofAppiPhoneWindow::getFrameNum() {
 	return nFrameCount;
+}
+
+double ofAppiPhoneWindow::getLastFrameTime() {
+	return lastFrameTime;
 }
 
 void ofAppiPhoneWindow::setWindowTitle(string title) {
@@ -201,21 +209,21 @@ void ofAppiPhoneWindow::disableSetupScreen(){
 	bEnableSetupScreen = false;
 };
 
-void ofAppiPhoneWindow::setOrientation(int orientation) {
+void ofAppiPhoneWindow::setOrientation(ofOrientation orientation) {
 
 	ofLog(OF_LOG_VERBOSE, "ofAppiPhoneWindow::setOrientation: " + ofToString(orientation));
 	switch (orientation) {
-		case OFXIPHONE_ORIENTATION_PORTRAIT:
+		case OF_ORIENTATION_DEFAULT:
 			[[UIApplication sharedApplication] setStatusBarOrientation: UIInterfaceOrientationPortrait];
 			break;
-		case OFXIPHONE_ORIENTATION_UPSIDEDOWN:
+		case OF_ORIENTATION_180:
 			[[UIApplication sharedApplication] setStatusBarOrientation: UIInterfaceOrientationPortraitUpsideDown];
 			break;
-		case OFXIPHONE_ORIENTATION_LANDSCAPE_RIGHT:
-			[[UIApplication sharedApplication] setStatusBarOrientation: UIInterfaceOrientationLandscapeRight];
+		case OF_ORIENTATION_90_RIGHT:
+			[[UIApplication sharedApplication] setStatusBarOrientation: UIInterfaceOrientationLandscapeLeft];
 			break;
-		case OFXIPHONE_ORIENTATION_LANDSCAPE_LEFT:
-			[[UIApplication sharedApplication] setStatusBarOrientation: UIInterfaceOrientationLandscapeLeft];			break;
+		case OF_ORIENTATION_90_LEFT:
+			[[UIApplication sharedApplication] setStatusBarOrientation: UIInterfaceOrientationLandscapeRight];			break;
 			
 		default:
 			break;
@@ -229,7 +237,7 @@ void ofAppiPhoneWindow::setOrientation(int orientation) {
 }
 
 
-int ofAppiPhoneWindow::getOrientation() {
+ofOrientation ofAppiPhoneWindow::getOrientation() {
 	return orientation;
 }
 
@@ -241,13 +249,13 @@ void ofAppiPhoneWindow::rotateXY(float &x, float &y) {
 			y = getHeight() - y;
 			break;
 			
-		case OFXIPHONE_ORIENTATION_LANDSCAPE_RIGHT:
+		case OFXIPHONE_ORIENTATION_LANDSCAPE_LEFT:
 			savedX = x;
 			x = y;
 			y = getHeight() - savedX;
 			break;
 			
-		case OFXIPHONE_ORIENTATION_LANDSCAPE_LEFT:
+		case OFXIPHONE_ORIENTATION_LANDSCAPE_RIGHT:
 			savedX = x;
 			x = getWidth() - y;
 			y = savedX;
@@ -336,15 +344,15 @@ void ofAppiPhoneWindow::timerLoop() {
 	
 	
 	
-	// -------------- fps calculation:
 	timeNow = ofGetElapsedTimef();
-    double diff = timeNow-timeThen;
-	if( diff  > 0.0f ) {
-		fps = 1.0 / diff;
-		frameRate *= 0.9f;
-        frameRate += 0.1f*fps;
-	}
-	timeThen = timeNow;
+	double diff = timeNow-timeThen;
+	if( diff  > 0.00001 ){
+		fps			= 1.0 / diff;
+		frameRate	*= 0.9f;
+		frameRate	+= 0.1f*fps;
+	 }
+	 lastFrameTime	= diff;
+	 timeThen		= timeNow;
   	// --------------
 	
 	nFrameCount++;		// increase the overall frame count

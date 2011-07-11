@@ -174,8 +174,7 @@ bool ofxAndroidVideoGrabber::initGrabber(int w, int h){
 	}
 
 	//ofLog(OF_LOG_NOTICE,"new frame callback size: " + ofToString((int)width) + "," + ofToString((int)height));
-	pixels.allocate(w,h,OF_IMAGE_COLOR);
-	pixels.set(0);
+	pixels.allocate(w,h,getPixelFormat());
 	bGrabberInited = true;
 
 	ofLog(OF_LOG_NOTICE,"ofVideoGrabber: Camera initialized correctly");
@@ -220,6 +219,10 @@ void ofxAndroidVideoGrabber::setPixelFormat(ofPixelFormat pixelFormat){
 
 ofPixelFormat ofxAndroidVideoGrabber::getPixelFormat(){
 	return internalPixelFormat;
+}
+
+ofPixelsRef ofxAndroidVideoGrabber::getAuxBuffer(){
+	return auxBuffer;
 }
 
 // Conversion from yuv nv21 to rgb24 adapted from
@@ -463,20 +466,35 @@ Java_cc_openframeworks_OFAndroidVideoGrabber_newFrame(JNIEnv*  env, jobject  thi
 		buffer = (unsigned char*)env->GetPrimitiveArrayCritical(array, NULL);
 		if(!buffer) return 1;
 
-		//time_one_frame = ofGetSystemTime();
-		if(instances[cameraId]->getPixelFormat()==OF_PIXELS_RGB){
-			ConvertYUV2RGB(buffer, 																 // y component
-					   buffer+int(instances[cameraId]->getWidth()*instances[cameraId]->getHeight()),		 // uv components
-				       instances[cameraId]->getPixels(),instances[cameraId]->getWidth(),instances[cameraId]->getHeight());
-		}else if(instances[cameraId]->getPixelFormat()==OF_PIXELS_RGB565){
-			ConvertYUV2toRGB565(buffer,instances[cameraId]->getPixels(),instances[cameraId]->getWidth(),instances[cameraId]->getHeight());
-			/*ConvertYUV2toRGB565_2(buffer, 																 // y component
-								   buffer+int(instances[cameraId]->getWidth()*instances[cameraId]->getHeight()),		 // uv components
-							       instances[cameraId]->getPixels(),instances[cameraId]->getWidth(),instances[cameraId]->getHeight());*/
-		}else if(instances[cameraId]->getPixelFormat()==OF_PIXELS_MONO){
-			memcpy(instances[cameraId]->getPixels(),buffer,int(instances[cameraId]->getWidth()*instances[cameraId]->getHeight()));
+		//static ofPixels aux_buffer;
+		ofxAndroidVideoGrabber* grabber = (ofxAndroidVideoGrabber*)instances[cameraId]->getGrabber().get();
+
+		unsigned char * dst = instances[cameraId]->getPixels();
+		if(int(instances[cameraId]->getWidth())!=width || int(instances[cameraId]->getHeight())!=height){
+			if(instances[cameraId]->getPixelFormat()!=OF_PIXELS_MONO){
+				grabber->getAuxBuffer().allocate(width,height,instances[cameraId]->getPixelFormat());
+				dst = grabber->getAuxBuffer().getPixels();
+			}else{
+				grabber->getAuxBuffer().setFromExternalPixels(buffer,width,height,OF_IMAGE_GRAYSCALE);
+			}
 		}
 
+
+
+		//time_one_frame = ofGetSystemTime();
+		if(instances[cameraId]->getPixelFormat()==OF_PIXELS_RGB){
+			ConvertYUV2RGB(buffer, 					// y component
+					   buffer+(width*height),		// uv components
+				       dst,width,height);
+		}else if(instances[cameraId]->getPixelFormat()==OF_PIXELS_RGB565){
+			ConvertYUV2toRGB565(buffer,dst,width,height);
+		}else if(instances[cameraId]->getPixelFormat()==OF_PIXELS_MONO && int(instances[cameraId]->getWidth())==width && int(instances[cameraId]->getHeight())==height){
+			memcpy(dst,buffer,(width*height));
+		}
+
+		if(int(instances[cameraId]->getWidth())!=width || int(instances[cameraId]->getHeight())!=height){
+			grabber->getAuxBuffer().resizeTo(instances[cameraId]->getPixelsRef());
+		}
 		/*acc_time += ofGetSystemTime() - time_one_frame;
 		num_frames ++;
 		if(ofGetSystemTime() - time_prev_out > 5000){
@@ -486,6 +504,7 @@ Java_cc_openframeworks_OFAndroidVideoGrabber_newFrame(JNIEnv*  env, jobject  thi
 
 		env->ReleasePrimitiveArrayCritical(array,buffer,0);
 		newPixels = true;
+		ofNotifyEvent(grabber->newFrameE,instances[cameraId]->getPixelsRef());
 		//((ofxAndroidApp*)ofGetAppPtr())->imageReceived(pixels,width,height);
 		return 0;
 	}

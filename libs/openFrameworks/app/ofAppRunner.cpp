@@ -20,12 +20,12 @@
 //========================================================================
 // static variables:
 
-ofBaseApp	*				OFSAptr = NULL;
+ofPtr<ofBaseApp>				OFSAptr;
 bool 						bMousePressed;
 bool						bRightButton;
 int							width, height;
 
-static ofAppBaseWindow *			window = NULL;
+static ofPtr<ofAppBaseWindow> window;
 
 
 //========================================================================
@@ -38,9 +38,57 @@ static ofAppBaseWindow *			window = NULL;
 	#include "ofAppGlutWindow.h"
 #endif
 
+// this is hacky only to provide bw compatibility, a shared_ptr should always be initialized using a shared_ptr
+// it shouldn't be a problem since it's only called from main and never deleted from outside
+// also since old versions created the window in the stack, if this function is called we create a shared_ptr that never deletes
+//--------------------------------------
+static void noopDeleter(ofAppBaseWindow*){}
+void ofSetupOpenGL(ofAppBaseWindow * windowPtr, int w, int h, int screenMode){
+	ofSetupOpenGL(ofPtr<ofAppBaseWindow>(windowPtr,std::ptr_fun(noopDeleter)),w,h,screenMode);
+}
+
+
+void ofExitCallback();
+
+// the same hack but in this case the shared_ptr will delete, old versions created the testApp as new...
+//--------------------------------------
+void ofRunApp(ofBaseApp * OFSA){
+
+	OFSAptr = ofPtr<ofBaseApp>(OFSA);
+	if(OFSAptr){
+		OFSAptr->mouseX = 0;
+		OFSAptr->mouseY = 0;
+	}
+
+	#ifdef TARGET_OSX
+		//this internally checks the executable path for osx
+		ofSetDataPathRoot("../../../data/");
+	#endif
+
+	atexit(ofExitCallback);
+
+	#ifdef WIN32_HIGH_RES_TIMING
+		timeBeginPeriod(1);		// ! experimental, sets high res time
+								// you need to call timeEndPeriod.
+								// if you quit the app other than "esc"
+								// (ie, close the console, kill the process, etc)
+								// at exit wont get called, and the time will
+								// remain high res, that could mess things
+								// up on your system.
+								// info here:http://www.geisswerks.com/ryan/FAQS/timing.html
+
+	#endif
+
+	window->initializeWindow();
+
+	ofSeedRandom();
+	ofResetElapsedTimeCounter();
+
+	window->runAppViaInfiniteLoop(OFSAptr.get());
+}
 
 //--------------------------------------
-void ofSetupOpenGL(ofAppBaseWindow * windowPtr, int w, int h, int screenMode){
+void ofSetupOpenGL(ofPtr<ofAppBaseWindow> windowPtr, int w, int h, int screenMode){
 	window = windowPtr;
 	window->setupOpenGL(w, h, screenMode);
 	
@@ -52,7 +100,7 @@ void ofSetupOpenGL(ofAppBaseWindow * windowPtr, int w, int h, int screenMode){
 		ofLog(OF_LOG_ERROR, "Error: %s\n", glewGetErrorString(err));
 	}
 #endif
-	ofSetDefaultRenderer(new ofGLRenderer(false));
+	ofSetCurrentRenderer(ofPtr<ofBaseRenderer>(new ofGLRenderer(false)));
 	//Default colors etc are now in ofGraphics - ofSetupGraphicDefaults
 	//ofSetupGraphicDefaults();
 }
@@ -61,11 +109,11 @@ void ofSetupOpenGL(ofAppBaseWindow * windowPtr, int w, int h, int screenMode){
 //--------------------------------------
 void ofSetupOpenGL(int w, int h, int screenMode){
 	#ifdef TARGET_OF_IPHONE
-		window = new ofAppiPhoneWindow();
+		window = ofPtr<ofAppBaseWindow>(new ofAppiPhoneWindow());
 	#elif defined TARGET_ANDROID
-		window = new ofAppAndroidWindow();
+		window = ofPtr<ofAppBaseWindow>(new ofAppAndroidWindow());
 	#else
-		window = new ofAppGlutWindow();
+		window = ofPtr<ofAppBaseWindow>(new ofAppGlutWindow());
 	#endif
 
 	ofSetupOpenGL(window,w,h,screenMode);
@@ -75,19 +123,12 @@ void ofSetupOpenGL(int w, int h, int screenMode){
 // 							currently looking at who to turn off
 //							at the end of the application
 
-void ofExitCallback();
 void ofExitCallback(){
 
 	//------------------------
 	// try to close engine if needed:
 	ofSoundShutdown();
 	//------------------------
-
-	//------------------------
-	// try to close rtAudio:
-	ofSoundStreamClose();
-	//------------------------
-
 
 	// try to close quicktime, for non-linux systems:
 	#if defined( TARGET_OSX ) || defined( TARGET_WIN32 )
@@ -107,12 +148,10 @@ void ofExitCallback(){
 	#endif
 
 	ofNotifyExit();
-
-	if(OFSAptr)delete OFSAptr;
 }
 
 //--------------------------------------
-void ofRunApp(ofBaseApp * OFSA){
+void ofRunApp(ofPtr<ofBaseApp> OFSA){
 
 	OFSAptr = OFSA;
 	if(OFSAptr){
@@ -144,17 +183,18 @@ void ofRunApp(ofBaseApp * OFSA){
 	ofSeedRandom();
 	ofResetElapsedTimeCounter();
 
-	window->runAppViaInfiniteLoop(OFSAptr);
+	window->runAppViaInfiniteLoop(OFSAptr.get());
+
 
 }
 
 //--------------------------------------
 ofBaseApp * ofGetAppPtr(){
-	return OFSAptr;
+	return OFSAptr.get();
 }
 
 //--------------------------------------
-void ofSetAppPtr(ofBaseApp *appPtr) {
+void ofSetAppPtr(ofPtr<ofBaseApp> appPtr) {
 	OFSAptr = appPtr;
 }
 
@@ -208,7 +248,7 @@ void ofSetOrientation(ofOrientation orientation){
 }
 
 //--------------------------------------
-int ofGetOrientation(){
+ofOrientation ofGetOrientation(){
 	return window->getOrientation();
 }
 
@@ -258,6 +298,11 @@ int ofGetWindowWidth(){
 //--------------------------------------------------
 int ofGetWindowHeight(){
 	return (int)window->getWindowSize().y;
+}
+
+//--------------------------------------------------
+bool ofDoesHWOrientation(){
+	return window->doesHWOrientation();
 }
 
 //--------------------------------------------------

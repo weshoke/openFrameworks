@@ -10,17 +10,14 @@ void testApp::setup() {
 	radius		= 100.f;
 	center.set(ofGetWidth()*.5, ofGetHeight()*.5, 0);
 	
-	pointLight.setup();
 	pointLight.setDiffuseColor( 0, 255, 0);
 	pointLight.setSpecularColor(255, 255, 255);
 	pointLight.setPointLight();
 	
-	spotLight.setup();
 	spotLight.setDiffuseColor(255, 0, 0);
 	spotLight.setSpecularColor(255, 255, 255);
 	spotLight.setSpotlight(40, 6);
 	
-	directionalLight.setup();
 	directionalLight.setDiffuseColor(0, 0, 255);
 	directionalLight.setSpecularColor(255, 255, 255);
 	directionalLight.setDirectional();
@@ -42,6 +39,7 @@ void testApp::update() {
 						   -cos(ofGetElapsedTimef()*.8f) * radius * 2 + center.z);
 	spotLight.setOrientation( ofVec3f( 0, cos(ofGetElapsedTimef()) * RAD_TO_DEG, 0) );
 	spotLight.setPosition( mouseX, mouseY, 200);
+	
 }
 
 //--------------------------------------------------------------

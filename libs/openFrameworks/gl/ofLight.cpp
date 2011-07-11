@@ -60,11 +60,14 @@ void ofSetGlobalAmbientColor(const ofColor& c) {
 }
 
 //----------------------------------------
+<<<<<<< HEAD
 void ofSetGlobalAmbientColor(float r, float g, float b, float a) {
 	ofSetGlobalAmbientColor( ofColor(r, g, b, a) );
 }
 
 //----------------------------------------
+=======
+>>>>>>> master
 bool* getActiveLights(){
 	static bool * lightsActive = new bool[OF_MAX_LIGHTS];
 	static bool lightsActiveInited = false;
@@ -76,6 +79,7 @@ bool* getActiveLights(){
 	return lightsActive;
 }
 
+<<<<<<< HEAD
 static void setActiveLight( int id ) {
 	if (id < 0 || id >= OF_MAX_LIGHTS) return;
 	getActiveLights()[id] = true;
@@ -86,6 +90,9 @@ static void setInactiveLight( int id ) {
 	getActiveLights()[id] = false;
 }
 
+=======
+//--------------------------------------------------------------
+>>>>>>> master
 static map<GLuint,int> & getIds(){
 	static map<GLuint,int> * ids = new map<GLuint,int>;
 	return *ids;
@@ -115,7 +122,7 @@ static void release(ofLight & light){
 			getIds().erase(id);
 		}
 	}else{
-		ofLog(OF_LOG_WARNING,"ofVbo: releasing id not found, this shouldn't be happening releasing anyway");
+		ofLog(OF_LOG_WARNING,"ofLight: releasing id not found, this shouldn't be happening releasing anyway");
 		lastRef=true;
 	}
 	if(lastRef){
@@ -137,10 +144,16 @@ static void release(ofLight & light){
 
 //----------------------------------------
 ofLight::ofLight(){
+<<<<<<< HEAD
 	glIndex = -1;
 	isEnabled = false;
 	isDirectional = false;
 	isSpotlight		= false;
+=======
+	glIndex			= -1;
+	isEnabled		= false;
+	setPointLight();
+>>>>>>> master
 }
 
 //----------------------------------------
@@ -155,15 +168,19 @@ void ofLight::destroy(){
 
 //----------------------------------------
 ofLight::ofLight(const ofLight & mom){
-	ambientColor = mom.ambientColor;
-	diffuseColor = mom.diffuseColor;
-	specularColor = mom.specularColor;
+	ambientColor	= mom.ambientColor;
+	diffuseColor	= mom.diffuseColor;
+	specularColor	= mom.specularColor;
 
 	glIndex = mom.glIndex;
 	retain(glIndex);
 	isEnabled		= mom.isEnabled;
 	isDirectional	= mom.isDirectional;
 	isSpotlight		= mom.isSpotlight;
+<<<<<<< HEAD
+=======
+	lightType		= mom.lightType;
+>>>>>>> master
 }
 
 //----------------------------------------
@@ -178,31 +195,33 @@ ofLight & ofLight::operator=(const ofLight & mom){
 	isEnabled		= mom.isEnabled;
 	isDirectional	= mom.isDirectional;
 	isSpotlight		= mom.isSpotlight;
+<<<<<<< HEAD
+=======
+	lightType		= mom.lightType;
+>>>>>>> master
 	return *this;
 }
 
 //----------------------------------------
-void ofLight::setup(){
-	if(glIndex!=-1) return;
-	// search for the first free block
-	for(int i=0; i<OF_MAX_LIGHTS; i++) {
-		if(getActiveLights()[i] == false) {
-			glIndex = i;
-			retain(glIndex);
-			enable();
-			return;
+void ofLight::enable() {
+	if(glIndex==-1){
+		bool bLightFound = false;
+		// search for the first free block
+		for(int i=0; i<OF_MAX_LIGHTS; i++) {
+			if(getActiveLights()[i] == false) {
+				glIndex = i;
+				retain(glIndex);
+				bLightFound = true;
+				break;
+			}
+		}
+		if( !bLightFound ){
+			ofLog(OF_LOG_ERROR, "ofLight : Trying to create too many lights: " + ofToString(glIndex));
 		}
 	}
-
-	ofLog(OF_LOG_ERROR, "Trying to create too many lights: " + ofToString(glIndex));
-}
-
-//----------------------------------------
-void ofLight::enable() {
-	if(glIndex!=-1) {
-		ofEnableLighting();
-		glEnable(GL_LIGHT0 + glIndex);
-	}
+	
+	ofEnableLighting();
+	glEnable(GL_LIGHT0 + glIndex);
 }
 
 //----------------------------------------
@@ -223,8 +242,10 @@ bool ofLight::getIsEnabled() const {
 }
 
 //----------------------------------------
-void ofLight::setDirectional(bool b) {
-	isDirectional = b;
+void ofLight::setDirectional() {
+	isDirectional	= true;
+	isSpotlight		= false;
+	lightType		= OF_LIGHT_DIRECTIONAL;
 }
 
 //----------------------------------------
@@ -234,8 +255,14 @@ bool ofLight::getIsDirectional() const {
 
 //----------------------------------------
 void ofLight::setSpotlight(float spotCutOff, float exponent) {
+<<<<<<< HEAD
 	setDirectional(false);
 	isSpotlight		= true;
+=======
+	isDirectional	= false;
+	isSpotlight		= true;
+	lightType		= OF_LIGHT_SPOT;
+>>>>>>> master
 	setSpotlightCutOff( spotCutOff );
 	setSpotConcentration( exponent );
 }
@@ -257,8 +284,14 @@ void ofLight::setSpotConcentration( float exponent ) {
 
 //----------------------------------------
 void ofLight::setPointLight() {
+<<<<<<< HEAD
 	setDirectional( false );
 	isSpotlight		= false;
+=======
+	isDirectional	= false;
+	isSpotlight	= false;
+	lightType	= OF_LIGHT_POINT;
+>>>>>>> master
 }
 
 //----------------------------------------
@@ -274,40 +307,54 @@ void ofLight::setAttenuation( float constant, float linear, float quadratic ) {
 }
 
 //----------------------------------------
+<<<<<<< HEAD
 void ofLight::setAmbientColor(const ofColor& c) {
+=======
+int ofLight::getType() {
+	return lightType;
+}
+
+//----------------------------------------
+void ofLight::setAmbientColor(const ofFloatColor& c) {
+>>>>>>> master
 	if(glIndex==-1) return;
-	ambientColor = c/255.0f;
-	ambientColor.a /= 255.f;
+	ambientColor = c;
 	glLightfv(GL_LIGHT0 + glIndex, GL_AMBIENT, &ambientColor.r);
 }
 
 //----------------------------------------
+<<<<<<< HEAD
 void ofLight::setAmbientColor(float r, float g, float b, float a) {
 	setAmbientColor(r, g, b, a);
 }
 
 //----------------------------------------
 void ofLight::setDiffuseColor(const ofColor& c) {
+=======
+void ofLight::setDiffuseColor(const ofFloatColor& c) {
+>>>>>>> master
 	if(glIndex==-1) return;
-	diffuseColor = c/255.0f;
-	diffuseColor.a /= 255.f;
+	diffuseColor = c;
 	glLightfv(GL_LIGHT0 + glIndex, GL_DIFFUSE, &diffuseColor.r);
 }
 
+<<<<<<< HEAD
 //----------------------------------------
 void ofLight::setDiffuseColor(float r, float g, float b, float a) {
 	setDiffuseColor(ofColor(r, g, b, a));
 }
 
+=======
+>>>>>>> master
 //----------------------------------------
-void ofLight::setSpecularColor(const ofColor& c) {
+void ofLight::setSpecularColor(const ofFloatColor& c) {
 	if(glIndex==-1) return;
-	specularColor = c/255.0f;
-	specularColor.a /= 255.f;
+	specularColor = c;
 	glLightfv(GL_LIGHT0 + glIndex, GL_SPECULAR, &specularColor.r);
 }
 
 //----------------------------------------
+<<<<<<< HEAD
 void ofLight::setSpecularColor(float r, float g, float b, float a) {
 	setSpecularColor(ofColor(r, g, b, a));
 }
@@ -325,6 +372,20 @@ ofColor ofLight::getDiffuseColor() const {
 //----------------------------------------
 ofColor ofLight::getSpecularColor() const {
 	return ofColor(specularColor.r * 255.f, specularColor.g * 255.f, specularColor.b * 255.f, specularColor.a * 255.f);
+=======
+ofFloatColor ofLight::getAmbientColor() const {
+	return ambientColor;
+}
+
+//----------------------------------------
+ofFloatColor ofLight::getDiffuseColor() const {
+	return diffuseColor;
+}
+
+//----------------------------------------
+ofFloatColor ofLight::getSpecularColor() const {
+	return specularColor;
+>>>>>>> master
 }
 
 

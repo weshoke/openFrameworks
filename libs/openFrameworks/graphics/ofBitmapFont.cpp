@@ -340,13 +340,13 @@ static float widthTex = 8.0f/256.0f;
 static float heightTex = 14.0f/256.0f;
 
 //TODO: make this bigger - or re-port back to vector?
-static GLfloat coords[2048];
-static GLfloat verts[2048];
-static int vC = 0;
-		
-//---------------------------------------------------------------------
-void  ofDrawBitmapCharacter(int character, int x , int y){
+vector <GLfloat> coords;
+vector <GLfloat> verts;
 
+static int vC = 0;
+
+//---------------------------------------------------------------------
+static void prepareBitmapTexture(){
 
 	if (!bBitmapTexturePrepared){
 		
@@ -373,18 +373,25 @@ void  ofDrawBitmapCharacter(int character, int x , int y){
 		glesBitmappedFontTexture.loadData(myLetterPixels, 16*16, 16*16, GL_LUMINANCE_ALPHA);
 		
 	}
+
+}
 		
-	if (character < 128) {
+//---------------------------------------------------------------------
+void  ofDrawBitmapCharacter(int character, int x , int y){
+
+	if(!bBitmapTexturePrepared){
+		prepareBitmapTexture();
+	}
 		
-		glesBitmappedFontTexture.bind();
-		
+	if (character < 128) {		
+		//TODO: look into a better fix. 
+		//old ofDrawBitmapString was 3 pixels higher, so this version renders text in a different position. 
+		//3 pixel adjustment corrects that. 
+		y -= 3;
+
 		float posTexW = (float)(character % 16)/16.0f;
 		float posTexH = ((int)(character / 16.0f))/16.0f;
-		
-		if( vC + 12 > 2048 ){
-			return;
-		}
-		
+				
 		coords[vC]		= posTexW;
 		coords[vC+1]	= posTexH;
 		coords[vC+2]	= posTexW + widthTex;
@@ -419,7 +426,18 @@ void  ofDrawBitmapCharacter(int character, int x , int y){
 }
 
 //---------------------------------------------------------------------
-void ofDrawBitmapCharacterStart(){
+void ofDrawBitmapCharacterStart(int stringLength){
+
+	verts.clear();
+	coords.clear();
+	
+	verts.assign(12 * (stringLength+1), 0);
+	coords.assign(12 * (stringLength+1), 0);
+
+	if(!bBitmapTexturePrepared){
+		prepareBitmapTexture();
+	}
+	
 	glesBitmappedFontTexture.bind();
 
 #ifndef TARGET_OPENGLES

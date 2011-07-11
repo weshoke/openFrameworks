@@ -53,6 +53,7 @@ public:
 	
 	virtual int			getFrameNum();
 	virtual float		getFrameRate();
+	virtual double		getLastFrameTime();
 	
 	virtual ofPoint		getWindowPosition();
 	virtual ofPoint		getWindowSize();
@@ -72,8 +73,8 @@ public:
 	virtual void		enableSetupScreen();
 	virtual void		disableSetupScreen();
 	
-	void				setOrientation(int orientation);
-	int					getOrientation();
+	void				setOrientation(ofOrientation orientation);
+	ofOrientation		getOrientation();
 	void				rotateXY(float &x, float &y);		// updates
 	
 	void				enableRetinaSupport();
@@ -96,12 +97,12 @@ protected:
 	ofPoint				windowSize;
 	ofPoint				windowPos;
 	
-	double				timeNow, timeThen, fps;
+	double				timeNow, timeThen, fps, lastFrameTime;
 //	int					nFramesForFPS;
 	int					nFrameCount;
 	bool				bEnableSetupScreen;
 	float				frameRate;
-	int					orientation;
+	ofOrientation		orientation;
 	
 	bool depthEnabled;
 	bool antiAliasingEnabled;

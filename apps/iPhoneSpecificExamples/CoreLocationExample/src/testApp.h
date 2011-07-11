@@ -15,6 +15,7 @@ public:
 	void touchMoved(ofTouchEventArgs &touch);
 	void touchUp(ofTouchEventArgs &touch);
 	void touchDoubleTap(ofTouchEventArgs &touch);
+	void touchCancelled(ofTouchEventArgs &touch);
 	
 	void exit();
 	void lostFocus();
@@ -24,6 +25,11 @@ public:
 	
 	ofxiPhoneCoreLocation * coreLocation;
 	
+	float heading;
+	
 	bool hasCompass;
 	bool hasGPS;
+	
+	ofImage arrowImg;
+	ofImage compassImg;
 };

@@ -2,6 +2,8 @@
 #include "ofGraphics.h"
 #include "ofTessellator.h"
 
+ofTessellator ofPath::tessellator;
+
 //----------------------------------------------------------
 ofSubPath::ofSubPath(){
 	bClosed = false;
@@ -79,7 +81,6 @@ ofPath::ofPath(){
 	mode = PATHS;
 	bNeedsTessellation = false;
 	hasChanged = false;
-	cachedTessellation.changed = false;
 	bUseShapeColor = true;
 	clear();
 }
@@ -256,7 +257,7 @@ void ofPath::setFilled(bool hasFill){
 		bFill = hasFill;
 		if(bFill) strokeWidth = 0;
 		else if(strokeWidth==0) strokeWidth = 1;
-		if(cachedTessellation.changed) bNeedsTessellation = true;
+		if(!cachedTessellationValid) bNeedsTessellation = true;
 	}
 }
 
@@ -324,7 +325,7 @@ float ofPath::getStrokeWidth() const{
 
 //----------------------------------------------------------
 void ofPath::generatePolylinesFromPaths(){
-	if(mode==POLYLINES) return;
+	if(mode==POLYLINES || paths.empty()) return;
 	if(hasChanged || curveResolution!=prevCurveRes){
 		prevCurveRes = curveResolution;
 
@@ -357,7 +358,7 @@ void ofPath::generatePolylinesFromPaths(){
 		}
 		hasChanged = false;
 		bNeedsTessellation = true;
-		cachedTessellation.changed=true;
+		cachedTessellationValid=false;
 	}
 }
 
@@ -366,32 +367,30 @@ void ofPath::tessellate(){
 	generatePolylinesFromPaths();
 	if(!bNeedsTessellation) return;
 	if(bFill){
-		ofTessellator::tessellateToCache( polylines, windingMode, cachedTessellation);
-		cachedTessellation.changed=false;
+		tessellator.tessellateToMesh( polylines, windingMode, cachedTessellation);
+		cachedTessellationValid=true;
 	}
-	if ( hasOutline() ){
-		if( windingMode != OF_POLY_WINDING_ODD ) {
-			ofTessellator::tessellateToOutline( polylines, windingMode, tessellatedPolylines);
-		}
+	if(hasOutline() && windingMode!=OF_POLY_WINDING_ODD){
+		tessellator.tessellateToPolylines( polylines, windingMode, tessellatedContour);
 	}
 	bNeedsTessellation = false;
 }
 
 //----------------------------------------------------------
 vector<ofPolyline> & ofPath::getOutline() {
-	tessellate();
-	if( windingMode != OF_POLY_WINDING_ODD ) {
-		return tessellatedPolylines;
+	if(windingMode!=OF_POLY_WINDING_ODD){
+		tessellate();
+		return tessellatedContour;
 	}else{
+		generatePolylinesFromPaths();
 		return polylines;
 	}
 }
 
 //----------------------------------------------------------
-vector<ofMesh> & ofPath::getTessellation(){
+ofMesh & ofPath::getTessellation(){
 	tessellate();
-	cachedTessellation.meshes.resize(cachedTessellation.numElements);
-	return cachedTessellation.meshes;
+	return cachedTessellation;
 }
 
 //----------------------------------------------------------
@@ -404,8 +403,8 @@ void ofPath::draw(float x, float y){
 
 //----------------------------------------------------------
 void ofPath::draw(){
-	if(ofGetDefaultRenderer()->rendersPathPrimitives()){
-		ofGetDefaultRenderer()->draw(*this);
+	if(ofGetCurrentRenderer()->rendersPathPrimitives()){
+		ofGetCurrentRenderer()->draw(*this);
 	}else{
 		tessellate();
 
@@ -419,9 +418,9 @@ void ofPath::draw(){
 			if(bUseShapeColor){
 				ofSetColor(fillColor);
 			}
-			for(int i=0;i<cachedTessellation.numElements && i<(int)cachedTessellation.meshes.size();i++){
-				ofGetDefaultRenderer()->draw(cachedTessellation.meshes[i]);
-			}
+
+			ofGetCurrentRenderer()->draw(cachedTessellation);
+
 		}
 
 		if(hasOutline()){
@@ -432,7 +431,7 @@ void ofPath::draw(){
 			ofSetLineWidth( strokeWidth );
 			vector<ofPolyline> & polys = getOutline();
 			for(int i=0;i<(int)polys.size();i++){
-				ofGetDefaultRenderer()->draw(polys[i]);
+				ofGetCurrentRenderer()->draw(polys[i]);
 			}
 			ofSetLineWidth(lineWidth);
 		}
@@ -527,3 +526,86 @@ void ofPath::simplify(float tolerance){
 		polylines[i].simplify(tolerance);
 	}
 }
+
+//----------------------------------------------------------
+void ofPath::translate(const ofPoint & p){
+	if(mode==PATHS){
+		for(int i=0;i<(int)paths.size();i++){
+			for(int j=0;j<(int)paths[i].getCommands().size();j++){
+				paths[i].getCommands()[j].to += p;
+				if(paths[i].getCommands()[j].type==ofSubPath::Command::bezierTo || paths[i].getCommands()[j].type==ofSubPath::Command::quadBezierTo){
+					paths[i].getCommands()[j].cp1 += p;
+					paths[i].getCommands()[j].cp2 += p;
+				}
+			}
+		}
+		hasChanged = true;
+	}else{
+		for(int i=0;i<(int)polylines.size();i++){
+			for(int j=0;j<(int)polylines[i].size();j++){
+				polylines[i][j] += p;
+			}
+		}
+		bNeedsTessellation = true;
+	}
+}
+
+//----------------------------------------------------------
+void ofPath::rotate(float az, const ofVec3f& axis ){
+	if(mode==PATHS){
+		for(int i=0;i<(int)paths.size();i++){
+			for(int j=0;j<(int)paths[i].getCommands().size();j++){
+				paths[i].getCommands()[j].to.rotate(az,axis);
+				if(paths[i].getCommands()[j].type==ofSubPath::Command::bezierTo || paths[i].getCommands()[j].type==ofSubPath::Command::quadBezierTo){
+					paths[i].getCommands()[j].cp1.rotate(az,axis);
+					paths[i].getCommands()[j].cp2.rotate(az,axis);
+				}
+				if(paths[i].getCommands()[j].type==ofSubPath::Command::arc){
+					paths[i].getCommands()[j].angleBegin += az;
+					paths[i].getCommands()[j].angleEnd += az;
+				}
+			}
+		}
+		hasChanged = true;
+	}else{
+		for(int i=0;i<(int)polylines.size();i++){
+			for(int j=0;j<(int)polylines[i].size();j++){
+				polylines[i][j].rotate(az,axis);
+			}
+		}
+		bNeedsTessellation = true;
+	}
+}
+
+
+//----------------------------------------------------------
+void ofPath::scale(float x, float y){
+	if(mode==PATHS){
+		for(int i=0;i<(int)paths.size();i++){
+			for(int j=0;j<(int)paths[i].getCommands().size();j++){
+				paths[i].getCommands()[j].to.x*=x;
+				paths[i].getCommands()[j].to.y*=y;
+				if(paths[i].getCommands()[j].type==ofSubPath::Command::bezierTo || paths[i].getCommands()[j].type==ofSubPath::Command::quadBezierTo){
+					paths[i].getCommands()[j].cp1.x*=x;
+					paths[i].getCommands()[j].cp1.y*=y;
+					paths[i].getCommands()[j].cp2.x*=x;
+					paths[i].getCommands()[j].cp2.y*=y;
+				}
+				if(paths[i].getCommands()[j].type==ofSubPath::Command::arc){
+					paths[i].getCommands()[j].radiusX *= x;
+					paths[i].getCommands()[j].radiusY *= y;
+				}
+			}
+		}
+		hasChanged = true;
+	}else{
+		for(int i=0;i<(int)polylines.size();i++){
+			for(int j=0;j<(int)polylines[i].size();j++){
+				polylines[i][j].x*=x;
+				polylines[i][j].y*=y;
+			}
+		}
+		bNeedsTessellation = true;
+	}
+}
+

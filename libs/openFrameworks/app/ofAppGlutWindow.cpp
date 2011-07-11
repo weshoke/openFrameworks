@@ -45,9 +45,9 @@ static int 			nonFullScreenX;
 static int 			nonFullScreenY;
 static int			windowW;
 static int			windowH;
-static ofBaseApp *	ofAppPtr;
 static int          nFramesSinceWindowResized;
 static ofOrientation	orientation;
+static ofBaseApp *  ofAppPtr;
 
 #ifdef TARGET_WIN32
 
@@ -295,7 +295,6 @@ void ofAppGlutWindow::initializeWindow(){
 
 //------------------------------------------------------------
 void ofAppGlutWindow::runAppViaInfiniteLoop(ofBaseApp * appPtr){
-
 	ofAppPtr = appPtr;
 
 	ofNotifySetup();
@@ -634,8 +633,7 @@ void ofAppGlutWindow::dragEvent(char ** names, int howManyFiles, int dragX, int 
 		info.files.push_back(temp);
 	}
 
-	ofAppPtr->dragEvent(info);
-
+	ofNotifyDragEvent(info);
 }
 
 

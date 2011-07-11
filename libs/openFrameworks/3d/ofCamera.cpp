@@ -12,13 +12,14 @@
 
 
 ofCamera::ofCamera() :
-cacheMatrices(false),
 isOrtho(false),
 fov(60),
 nearClip(0),
 farClip(0),
 isActive(false),
-hasStoredMatrices(false) {
+hasStoredMatrices(false),
+bCacheMatrices(false)
+{
 }
 
 //----------------------------------------
@@ -73,6 +74,10 @@ void ofCamera::begin(ofRectangle viewport) {
 		//			else 
 #ifndef TARGET_OPENGLES
 		glOrtho(0, viewport.width, 0, viewport.height, nearClip, farClip);
+#else
+		ofMatrix4x4 ortho;
+		ortho.makeOrthoMatrix(0, viewport.width, 0, viewport.height, nearClip, farClip);
+		glLoadMatrixf(ortho.getPtr());
 #endif		
 	} else {
 		gluPerspective(fov, viewport.width/viewport.height, nearClip, farClip);
@@ -83,7 +88,7 @@ void ofCamera::begin(ofRectangle viewport) {
 	ofViewport(viewport);
 	
 	//store current matrices
-	if (cacheMatrices)
+	if (bCacheMatrices)
 	{
 		glGetFloatv(GL_PROJECTION_MATRIX, matProjection.getPtr());
 		glGetFloatv(GL_MODELVIEW_MATRIX, matModelView.getPtr());
@@ -104,7 +109,7 @@ void ofCamera::end() {
 //----------------------------------------
 ofMatrix4x4 ofCamera::getProjectionMatrix(ofRectangle viewport) {
 	
-	if (cacheMatrices)
+	if (bCacheMatrices)
 		return matProjection;
 	else
 	{
@@ -117,7 +122,7 @@ ofMatrix4x4 ofCamera::getProjectionMatrix(ofRectangle viewport) {
 //----------------------------------------
 ofMatrix4x4 ofCamera::getModelViewMatrix() {
 
-	if (cacheMatrices)
+	if (bCacheMatrices)
 		return matModelView;
 	else
 	{
@@ -183,4 +188,9 @@ void ofCamera::calcClipPlanes(ofRectangle viewport)
 		nearClip = (nearClip == 0) ? dist / 100.0f : nearClip;
 		farClip = (farClip == 0) ? dist * 10.0f : farClip;
 	}
+}
+
+
+void ofCamera::cacheMatrices(bool cache){
+	bCacheMatrices = cache;
 }

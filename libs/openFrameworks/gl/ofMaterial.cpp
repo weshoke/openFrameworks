@@ -1,4 +1,5 @@
 #include "ofMaterial.h"
+#include "ofConstants.h"
 
 ofMaterial::ofMaterial() {
 
@@ -9,31 +10,27 @@ ofMaterial::ofMaterial() {
     shininess = 0.2;
 }
 
-void ofMaterial::setColors(ofColor oDiffuse, ofColor oAmbient, ofColor oSpecular, ofColor oEmissive) {
+void ofMaterial::setColors(ofFloatColor oDiffuse, ofFloatColor oAmbient, ofFloatColor oSpecular, ofFloatColor oEmissive) {
 	setDiffuseColor(oDiffuse);
 	setAmbientColor(oAmbient);
 	setSpecularColor(oSpecular);
 	setEmissiveColor(oEmissive);
 }
 
-void ofMaterial::setDiffuseColor(ofColor oDiffuse) {
-	diffuse = oDiffuse/255.f;
-	diffuse.a /= 255.f;
+void ofMaterial::setDiffuseColor(ofFloatColor oDiffuse) {
+	diffuse = oDiffuse;
 }
 
-void ofMaterial::setAmbientColor(ofColor oAmbient) {
-	ambient = oAmbient/255.f;
-	ambient.a /= 255.f;
+void ofMaterial::setAmbientColor(ofFloatColor oAmbient) {
+	ambient = oAmbient;
 }
 
-void ofMaterial::setSpecularColor(ofColor oSpecular) {
-	specular = oSpecular/255.f;
-	specular.a /= 255.f;
+void ofMaterial::setSpecularColor(ofFloatColor oSpecular) {
+	specular = oSpecular;
 }
 
-void ofMaterial::setEmissiveColor(ofColor oEmissive) {
-	emissive = oEmissive/255.f;
-	emissive.a /= 255.f;
+void ofMaterial::setEmissiveColor(ofFloatColor oEmissive) {
+	emissive = oEmissive;
 }
 
 void ofMaterial::setShininess(float nShininess) {
@@ -44,6 +41,7 @@ float ofMaterial::getShininess(){
 	return shininess;
 }
 
+<<<<<<< HEAD
 ofColor ofMaterial::getDiffuseColor() {
 	return ofColor(diffuse.r * 255.f, diffuse.g * 255.f, diffuse.b * 255.f, diffuse.a * 255.f);
 }
@@ -58,6 +56,22 @@ ofColor ofMaterial::getSpecularColor() {
 
 ofColor ofMaterial::getEmissiveColor() {
 	return ofColor(emissive.r * 255.f, emissive.g * 255.f, emissive.b * 255.f, emissive.a * 255.f);
+=======
+ofFloatColor ofMaterial::getDiffuseColor() {
+	return diffuse;
+}
+
+ofFloatColor ofMaterial::getAmbientColor() {
+	return ambient;
+}
+
+ofFloatColor ofMaterial::getSpecularColor() {
+	return specular;
+}
+
+ofFloatColor ofMaterial::getEmissiveColor() {
+	return emissive;
+>>>>>>> master
 }
 
 void ofMaterial::begin() {

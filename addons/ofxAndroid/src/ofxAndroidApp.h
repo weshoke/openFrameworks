@@ -10,6 +10,7 @@
 
 #include "ofBaseApp.h"
 #include "ofEvents.h"
+#include "ofConstants.h"
 
 class ofxAndroidApp: public ofBaseApp{
 public:
@@ -43,6 +44,17 @@ public:
 	virtual bool backPressed(){
 		return false;
 	}
+
+	virtual bool menuItemSelected(string menu_id_str){
+		return false;
+	}
+
+	virtual bool menuItemChecked(string menu_id_str, bool checked){
+		return false;
+	}
+
+	virtual void okPressed(){};
+	virtual void cancelPressed(){};
 };
 
 

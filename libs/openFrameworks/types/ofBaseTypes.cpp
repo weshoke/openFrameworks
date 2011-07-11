@@ -1,19 +1,6 @@
-/*
- *  ofBaseTypes.cpp
- *  openFrameworksLib
- *
- *  Created by zachary lieberman on 1/9/11.
- *  Copyright 2011 __MyCompanyName__. All rights reserved.
- *
- */
-
 #include "ofBaseTypes.h"
 #include "ofUtils.h"
 
-//---------------------------------------------------------------------------
-ofBaseVideoGrabber::ofBaseVideoGrabber(){
-	
-}
 
 //---------------------------------------------------------------------------
 ofBaseVideoGrabber::~ofBaseVideoGrabber(){
@@ -42,7 +29,7 @@ void ofBaseVideoGrabber::videoSettings(){
 
 //---------------------------------------------------------------------------
 void ofBaseVideoGrabber::setPixelFormat(ofPixelFormat pixelFormat){
-	ofLog(OF_LOG_WARNING, "ofBaseVideoGrabber::setPixelFormat not implemented");
+	//ofLog(OF_LOG_WARNING, "ofBaseVideoGrabber::setPixelFormat not implemented");
 }
 
 ofPixelFormat ofBaseVideoGrabber::getPixelFormat(){
@@ -51,11 +38,7 @@ ofPixelFormat ofBaseVideoGrabber::getPixelFormat(){
 }
 
 //---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
 
-ofBaseVideoPlayer::ofBaseVideoPlayer (){
-
-}
 
 //---------------------------------------------------------------------------
 ofBaseVideoPlayer::~ofBaseVideoPlayer(){
@@ -150,5 +133,5 @@ void ofBaseVideoPlayer::previousFrame(){
 }
 //---------------------------------------------------------------------------
 void ofBaseVideoPlayer::setPixelFormat(ofPixelFormat pixelFormat){
-	ofLog(OF_LOG_WARNING, "ofBaseVideoPlayer::setPixelFormat not implemented");
+	//ofLog(OF_LOG_WARNING, "ofBaseVideoPlayer::setPixelFormat not implemented");
 }

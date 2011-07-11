@@ -4,6 +4,7 @@
 #include "ofBaseTypes.h"
 #include "ofGLRenderer.h"
 #include "ofPath.h"
+#include "ofRendererCollection.h"
 
 #ifdef TARGET_OSX
 	#include <OpenGL/glu.h>
@@ -49,10 +50,9 @@ static deque <ofRectangle> viewportHistory;
 
 static ofPath shape;
 static ofMesh vertexData;
-static ofBaseRenderer * renderer = NULL;
+static ofPtr<ofBaseRenderer> renderer;
 
-void ofSetDefaultRenderer(ofBaseRenderer * renderer_){
-	if(renderer) delete renderer;
+void ofSetCurrentRenderer(ofPtr<ofBaseRenderer> renderer_){
 	renderer = renderer_;
 	renderer->setupGraphicDefaults();
 
@@ -67,10 +67,68 @@ void ofSetDefaultRenderer(ofBaseRenderer * renderer_){
 	ofSetStyle(currentStyle);
 }
 
-ofBaseRenderer * ofGetDefaultRenderer(){
+ofPtr<ofBaseRenderer> & ofGetCurrentRenderer(){
 	return renderer;
 }
 
+ofPtr<ofGLRenderer> ofGetGLRenderer(){
+	if(ofGetCurrentRenderer()->getType()=="GL"){
+		return (ofPtr<ofGLRenderer>&)ofGetCurrentRenderer();
+	}else if(ofGetCurrentRenderer()->getType()=="collection"){
+		return ((ofPtr<ofRendererCollection>&)ofGetCurrentRenderer())->getGLRenderer();
+	}else{
+		return ofPtr<ofGLRenderer>();
+	}
+}
+
+#ifndef TARGET_OPENGLES 
+
+//-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
+#include "ofCairoRenderer.h"
+#include "ofGLRenderer.h"
+
+static ofPtr<ofCairoRenderer> cairoScreenshot;
+static ofPtr<ofBaseRenderer> storedRenderer;
+static ofPtr<ofRendererCollection> rendererCollection;
+static bool bScreenShotStarted = false;
+
+//-----------------------------------------------------------------------------------
+void ofBeginSaveScreenAsPDF(string filename, bool bMultipage, bool b3D, ofRectangle viewport){
+	if( bScreenShotStarted )ofEndSaveScreenAsPDF();
+	
+	storedRenderer = ofGetCurrentRenderer();
+	
+	cairoScreenshot = ofPtr<ofCairoRenderer>(new ofCairoRenderer);
+	cairoScreenshot->setup(filename, ofCairoRenderer::PDF, bMultipage, b3D, viewport); 		
+
+	rendererCollection = ofPtr<ofRendererCollection>(new ofRendererCollection);
+	rendererCollection->renderers.push_back(ofGetGLRenderer());
+	rendererCollection->renderers.push_back(cairoScreenshot);
+	
+	ofSetCurrentRenderer(rendererCollection);
+	bScreenShotStarted = true;
+}
+
+//-----------------------------------------------------------------------------------
+void ofEndSaveScreenAsPDF(){
+	if( bScreenShotStarted ){
+
+		if( cairoScreenshot ){
+			cairoScreenshot->close();
+			rendererCollection.reset();
+			cairoScreenshot.reset();
+		}
+		if( storedRenderer ){
+			ofSetCurrentRenderer(storedRenderer);
+			storedRenderer.reset();
+		}
+		
+		bScreenShotStarted = false;
+	}
+}
+
+#endif
 
 // opengl specifics
 
@@ -208,6 +266,22 @@ int ofGetViewportHeight(){
 }
 
 //----------------------------------------------------------
+int ofOrientationToDegrees(ofOrientation orientation){
+	switch(orientation){
+	case OF_ORIENTATION_DEFAULT:
+		return 0;
+	case OF_ORIENTATION_180:
+		return 180;
+	case OF_ORIENTATION_90_RIGHT:
+		return 270;
+	case OF_ORIENTATION_90_LEFT:
+		return 90;
+	default:
+		return 0;
+	}
+}
+
+//----------------------------------------------------------
 void ofSetCoordHandedness(ofHandednessType handedness) {
 	renderer->setCoordHandedness(handedness);
 }
@@ -218,12 +292,12 @@ ofHandednessType ofGetCoordHandedness() {
 }
 
 //----------------------------------------------------------
-void ofSetupScreenPerspective(float width, float height, int orientation, bool vFlip, float fov, float nearDist, float farDist) {
+void ofSetupScreenPerspective(float width, float height, ofOrientation orientation, bool vFlip, float fov, float nearDist, float farDist) {
 	renderer->setupScreenPerspective(width,height, orientation, vFlip,fov,nearDist,farDist);
 }
 
 //----------------------------------------------------------
-void ofSetupScreenOrtho(float width, float height, int orientation, bool vFlip, float nearDist, float farDist) {
+void ofSetupScreenOrtho(float width, float height, ofOrientation orientation, bool vFlip, float nearDist, float farDist) {
 	renderer->setupScreenOrtho(width,height,orientation,vFlip,nearDist,farDist);
 }
 
@@ -328,7 +402,7 @@ bool ofbClearBg(){
 
 //----------------------------------------------------------
 float * ofBgColorPtr(){
-	return renderer->getBgColor().v;
+	return &renderer->getBgColor().r;
 }
 
 //----------------------------------------------------------
@@ -894,7 +968,7 @@ void ofBox(float size) {
 			20,22,23
 		};
 		vertexData.addIndices(indices,36);
-		vertexData.setMode(OF_TRIANGLES_MODE);
+		vertexData.setMode(OF_PRIMITIVE_TRIANGLES);
 		renderer->draw(vertexData);
 	} else {
 		ofVec3f vertices[] = {
@@ -929,7 +1003,7 @@ void ofBox(float size) {
 		};
 		vertexData.addIndices(indices,24);
 
-		vertexData.setMode(OF_LINES_MODE);
+		vertexData.setMode(OF_PRIMITIVE_LINES);
 		renderer->draw(vertexData);
 	}
 

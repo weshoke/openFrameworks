@@ -1,5 +1,4 @@
 *.mode*
-*.pbxuser
 build/
 obj/
 *.o
@@ -12,12 +11,26 @@ openFrameworksUniversal.a
 #see addons/.gitignore
 addons
 
+#xcode files
+*.pbxuser
+*.perspectivev3
+apps/examples/*/*.xcodeproj
+apps/examples/*/Project.xcconfig
+apps/examples/*/openFrameworks-Info.plist
+apps/addonsExamples/*/*.xcodeproj
+apps/addonsExamples/*/Project.xcconfig
+apps/addonsExamples/*/openFrameworks-Info.plist
+
 #codeblocks files
 apps/*/*/*.layout
 apps/*/*/*.depend
 apps/*/*/bin/clickToLaunch*
 apps/*/*/bin/libs
 apps/*/*/obj
+apps/examples/*/*.cbp
+apps/examples/*/*.workspace
+apps/addonsExamples/*/*.cbp
+apps/addonsExamples/*/*.workspace
 
 #rule to avoid non-official apps going into git
 #see apps/.gitignore
@@ -30,6 +43,11 @@ libs/openFrameworksCompiled/project/*/*.layout
 #linux temporary files
 *~
 
+#vs2010 user files
+*.sdf
+*.opensdf
+*.suo
+
 #eclipse build folders
 #Mac OS X
 addons/Debug Mac OS X
@@ -39,6 +57,8 @@ libs/openFrameworks/Release Mac OS X
 apps/*/*/Debug Mac OS X
 apps/*/*/Release Mac OS X
 .DS_Store
+xcuserdata
+project.xcworkspace
 
 #Linux
 addons/Debug Linux
@@ -49,5 +69,10 @@ apps/*/*/Debug Linux
 apps/*/*/Release Linux
 apps/*/*/Debug Linux64
 apps/*/*/Release Linux64
+apps/examples/*/Makefile
+apps/examples/*/config.make
+apps/addonsExamples/*/Makefile
+apps/addonsExamples/*/config.make
+*.pyc
 
 

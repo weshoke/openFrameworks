@@ -15,10 +15,12 @@ public:
 	void touchMoved(ofTouchEventArgs &touch);
 	void touchUp(ofTouchEventArgs &touch);
 	void touchDoubleTap(ofTouchEventArgs &touch);
+	void touchCancelled(ofTouchEventArgs &touch);
 
 	ofTrueTypeFont testFont;
 	ofTrueTypeFont testFont2;
-	
+	ofTTFCharacter testChar;
+
 	int letter;
 	
 };

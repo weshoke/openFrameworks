@@ -6,6 +6,8 @@
 #include "ofMesh.h"
 #include "ofBitmapFont.h"
 #include "ofGLUtils.h"
+#include "ofImage.h"
+#include "ofFbo.h"
 
 //----------------------------------------------------------
 ofGLRenderer::ofGLRenderer(bool useShapeColor){
@@ -14,26 +16,33 @@ ofGLRenderer::ofGLRenderer(bool useShapeColor){
 	linePoints.resize(2);
 	rectPoints.resize(4);
 	triPoints.resize(3);
+
+	currentFbo = NULL;
+}
+
+//----------------------------------------------------------
+void ofGLRenderer::update(){
+
 }
 
 //----------------------------------------------------------
 void ofGLRenderer::draw(ofMesh & vertexData){
 	if(vertexData.getNumVertices()){
 		glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(3, GL_FLOAT, sizeof(ofVec3f), vertexData.getVerticesPointer());
+		glVertexPointer(3, GL_FLOAT, sizeof(ofVec3f), &vertexData.getVerticesPointer()->x);
 	}
 	if(vertexData.getNumNormals()){
 		glEnableClientState(GL_NORMAL_ARRAY);
-		glNormalPointer(GL_FLOAT, 0, vertexData.getNormalsPointer());
+		glNormalPointer(GL_FLOAT, sizeof(ofVec3f), &vertexData.getNormalsPointer()->x);
 	}
 	if(vertexData.getNumColors()){
 		glEnableClientState(GL_COLOR_ARRAY);
-		glColorPointer(4,GL_FLOAT, sizeof(ofColor), vertexData.getColorsPointer());
+		glColorPointer(4,GL_FLOAT, sizeof(ofFloatColor), &vertexData.getColorsPointer()->r);
 	}
 
 	if(vertexData.getNumTexCoords()){
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glTexCoordPointer(2, GL_FLOAT, 0, vertexData.getTexCoordsPointer());
+		glTexCoordPointer(2, GL_FLOAT, sizeof(ofVec2f), &vertexData.getTexCoordsPointer()->x);
 	}
 
 	if(vertexData.getNumIndices()){
@@ -74,7 +83,7 @@ void ofGLRenderer::draw(ofMesh & vertexData, ofPolyRenderMode renderType){
 		}
 		if(vertexData.getNumColors()){
 			glEnableClientState(GL_COLOR_ARRAY);
-			glColorPointer(4,GL_FLOAT, sizeof(ofColor), vertexData.getColorsPointer());
+			glColorPointer(4,GL_FLOAT, sizeof(ofFloatColor), vertexData.getColorsPointer());
 		}
 
 		if(vertexData.getNumTexCoords()){
@@ -91,6 +100,9 @@ void ofGLRenderer::draw(ofMesh & vertexData, ofPolyRenderMode renderType){
 			drawMode = GL_LINES;
 			break;
 		case OF_MESH_FILL:
+			drawMode = ofGetGLPrimitiveMode(vertexData.getMode());
+			break;
+		default:
 			drawMode = ofGetGLPrimitiveMode(vertexData.getMode());
 			break;
 		}
@@ -115,22 +127,26 @@ void ofGLRenderer::draw(ofMesh & vertexData, ofPolyRenderMode renderType){
 
 //----------------------------------------------------------
 void ofGLRenderer::draw(vector<ofPoint> & vertexData, ofPrimitiveMode drawMode){
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(ofVec3f), &vertexData[0].x);
-	glDrawArrays(ofGetGLPrimitiveMode(drawMode), 0, vertexData.size());
+	if(!vertexData.empty()) {
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3, GL_FLOAT, sizeof(ofVec3f), &vertexData[0].x);
+		glDrawArrays(ofGetGLPrimitiveMode(drawMode), 0, vertexData.size());
+	}
 }
 
 //----------------------------------------------------------
 void ofGLRenderer::draw(ofPolyline & poly){
-	// use smoothness, if requested:
-	if (bSmoothHinted) startSmoothing();
+	if(!poly.getVertices().empty()) {
+		// use smoothness, if requested:
+		if (bSmoothHinted) startSmoothing();
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(ofVec3f), &poly.getVertices()[0].x);
-	glDrawArrays(poly.isClosed()?GL_LINE_LOOP:GL_LINE_STRIP, 0, poly.size());
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3, GL_FLOAT, sizeof(ofVec3f), &poly.getVertices()[0].x);
+		glDrawArrays(poly.isClosed()?GL_LINE_LOOP:GL_LINE_STRIP, 0, poly.size());
 
-	// use smoothness, if requested:
-	if (bSmoothHinted) endSmoothing();
+		// use smoothness, if requested:
+		if (bSmoothHinted) endSmoothing();
+	}
 }
 
 //----------------------------------------------------------
@@ -140,13 +156,11 @@ void ofGLRenderer::draw(ofPath & shape){
 		prevColor = ofGetStyle().color;
 	}
 	if(shape.isFilled()){
-		vector<ofMesh> & mesh = shape.getTessellation();
+		ofMesh & mesh = shape.getTessellation();
 		if(shape.getUseShapeColor()){
 			setColor( shape.getFillColor() * ofGetStyle().color,shape.getFillColor().a/255. * ofGetStyle().color.a);
 		}
-		for(int i=0;i<(int)mesh.size();i++){
-			draw(mesh[i].getVertices(),mesh[i].getMode());
-		}
+		draw(mesh);
 	}
 	if(shape.hasOutline()){
 		float lineWidth = ofGetStyle().lineWidth;
@@ -165,19 +179,55 @@ void ofGLRenderer::draw(ofPath & shape){
 }
 
 //----------------------------------------------------------
+void ofGLRenderer::draw(ofImage & image, float x, float y, float z, float w, float h){
+	if(image.isUsingTexture()){
+		ofTexture& tex = image.getTextureReference();
+		if(tex.bAllocated()) {
+			tex.draw(x,y,z,w,h);
+		} else {
+			ofLogWarning() << "ofGLRenderer::draw(): texture is not allocated";
+		}
+	}
+}
+
+//----------------------------------------------------------
+void ofGLRenderer::draw(ofFloatImage & image, float x, float y, float z, float w, float h){
+	if(image.isUsingTexture()){
+		ofTexture& tex = image.getTextureReference();
+		if(tex.bAllocated()) {
+			tex.draw(x,y,z,w,h);
+		} else {
+			ofLogWarning() << "ofGLRenderer::draw(): texture is not allocated";
+		}
+	}
+}
+
+//----------------------------------------------------------
+void ofGLRenderer::draw(ofShortImage & image, float x, float y, float z, float w, float h){
+	if(image.isUsingTexture()){
+		ofTexture& tex = image.getTextureReference();
+		if(tex.bAllocated()) {
+			tex.draw(x,y,z,w,h);
+		} else {
+			ofLogWarning() << "ofGLRenderer::draw(): texture is not allocated";
+		}
+	}
+}
+
+//----------------------------------------------------------
+void ofGLRenderer::setCurrentFBO(ofFbo * fbo){
+	currentFbo = fbo;
+}
+
+//----------------------------------------------------------
 void ofGLRenderer::pushView() {
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 
 	ofRectangle currentViewport;
 	currentViewport.set(viewport[0], viewport[1], viewport[2], viewport[3]);
-	viewportHistory.push_front(currentViewport);
+	viewportHistory.push(currentViewport);
 
-	if( viewportHistory.size() > OF_MAX_VIEWPORT_HISTORY ){
-		viewportHistory.pop_back();
-		//should we warn here?
-		//ofLog(OF_LOG_WARNING, "ofPushView - warning: you have used ofPushView more than %i times without calling ofPopView - check your code!", OF_MAX_VIEWPORT_HISTORY);
-	}
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -189,9 +239,9 @@ void ofGLRenderer::pushView() {
 //----------------------------------------------------------
 void ofGLRenderer::popView() {
 	if( viewportHistory.size() ){
-		ofRectangle viewRect = viewportHistory.front();
+		ofRectangle viewRect = viewportHistory.top();
 		viewport(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-		viewportHistory.pop_front();
+		viewportHistory.pop();
 	}
 
 	glMatrixMode(GL_PROJECTION);
@@ -211,7 +261,11 @@ void ofGLRenderer::viewport(float x, float y, float width, float height, bool in
 	if(height == 0) height = ofGetWindowHeight();
 
 	if (invertY){
-		y = ofGetWindowHeight() - (y + height);
+		if(currentFbo){
+			y = currentFbo->getHeight() - (y + height);
+		}else{
+			y = ofGetWindowHeight() - (y + height);
+		}
 	}
 	glViewport(x, y, width, height);	
 }
@@ -258,10 +312,9 @@ ofHandednessType ofGLRenderer::getCoordHandedness() {
 }
 
 //----------------------------------------------------------
-void ofGLRenderer::setupScreenPerspective(float width, float height, int orientation, bool vFlip, float fov, float nearDist, float farDist) {
+void ofGLRenderer::setupScreenPerspective(float width, float height, ofOrientation orientation, bool vFlip, float fov, float nearDist, float farDist) {
 	if(width == 0) width = ofGetWidth();
 	if(height == 0) height = ofGetHeight();
-	if( orientation == 0 ) orientation = ofGetOrientation();
 
 	float viewW = ofGetViewportWidth();
 	float viewH = ofGetViewportHeight();
@@ -285,55 +338,62 @@ void ofGLRenderer::setupScreenPerspective(float width, float height, int orienta
 	gluLookAt(eyeX, eyeY, dist, eyeX, eyeY, 0, 0, 1, 0);
 
 	//note - theo checked this on iPhone and Desktop for both vFlip = false and true
-	switch(orientation) {
-		case OF_ORIENTATION_180:
-			glRotatef(-180, 0, 0, 1);
-			if(vFlip){
-				glScalef(1, -1, 1);
-				glTranslatef(-width, 0, 0);
-			}else{
-				glTranslatef(-width, -height, 0);
-			}
+	if(ofDoesHWOrientation()){
+		if(vFlip){
+			glScalef(1, -1, 1);
+			glTranslatef(0, -height, 0);
+		}
+	}else{
+		if( orientation == OF_ORIENTATION_UNKNOWN ) orientation = ofGetOrientation();
+		switch(orientation) {
+			case OF_ORIENTATION_180:
+				glRotatef(-180, 0, 0, 1);
+				if(vFlip){
+					glScalef(1, -1, 1);
+					glTranslatef(-width, 0, 0);
+				}else{
+					glTranslatef(-width, -height, 0);
+				}
 
-			break;
+				break;
 
-		case OF_ORIENTATION_90_RIGHT:
-			glRotatef(-90, 0, 0, 1);
-			if(vFlip){
-				glScalef(-1, 1, 1);
-			}else{
-				glScalef(-1, -1, 1);
-				glTranslatef(0, -height, 0);
-			}
-			break;
+			case OF_ORIENTATION_90_RIGHT:
+				glRotatef(-90, 0, 0, 1);
+				if(vFlip){
+					glScalef(-1, 1, 1);
+				}else{
+					glScalef(-1, -1, 1);
+					glTranslatef(0, -height, 0);
+				}
+				break;
 
-		case OF_ORIENTATION_90_LEFT:
-			glRotatef(90, 0, 0, 1);
-			if(vFlip){
-				glScalef(-1, 1, 1);
-				glTranslatef(-width, -height, 0);
-			}else{
-				glScalef(-1, -1, 1);
-				glTranslatef(-width, 0, 0);
-			}
-			break;
+			case OF_ORIENTATION_90_LEFT:
+				glRotatef(90, 0, 0, 1);
+				if(vFlip){
+					glScalef(-1, 1, 1);
+					glTranslatef(-width, -height, 0);
+				}else{
+					glScalef(-1, -1, 1);
+					glTranslatef(-width, 0, 0);
+				}
+				break;
 
-		case OF_ORIENTATION_DEFAULT:
-		default:
-			if(vFlip){
-				glScalef(1, -1, 1);
-				glTranslatef(0, -height, 0);
-			}
-			break;
+			case OF_ORIENTATION_DEFAULT:
+			default:
+				if(vFlip){
+					glScalef(1, -1, 1);
+					glTranslatef(0, -height, 0);
+				}
+				break;
+		}
 	}
 
 }
 
 //----------------------------------------------------------
-void ofGLRenderer::setupScreenOrtho(float width, float height, int orientation, bool vFlip, float nearDist, float farDist) {
+void ofGLRenderer::setupScreenOrtho(float width, float height, ofOrientation orientation, bool vFlip, float nearDist, float farDist) {
 	if(width == 0) width = ofGetWidth();
 	if(height == 0) height = ofGetHeight();
-	if( orientation == 0 ) orientation = ofGetOrientation();
 	
 	float viewW = ofGetViewportWidth();
 	float viewH = ofGetViewportHeight();
@@ -351,10 +411,11 @@ void ofGLRenderer::setupScreenOrtho(float width, float height, int orientation, 
 
 #else
 	if(vFlip) {
+		ofMatrix4x4 ortho = ofMatrix4x4::newOrthoMatrix(0, width, height, 0, nearDist, farDist);
 		ofSetCoordHandedness(OF_LEFT_HANDED);
 	}
 	
-	ofMatrix4x4 ortho = ofxMatrix4x4::newOrthoMatrix(0, viewW, 0, viewH, nearDist, farDist);
+	ofMatrix4x4 ortho = ofMatrix4x4::newOrthoMatrix(0, viewW, 0, viewH, nearDist, farDist);
 	glMultMatrixf(ortho.getPtr());	
 #endif
 
@@ -362,46 +423,54 @@ void ofGLRenderer::setupScreenOrtho(float width, float height, int orientation, 
 	glLoadIdentity();
 
 	//note - theo checked this on iPhone and Desktop for both vFlip = false and true
-	switch(orientation) {
-		case OF_ORIENTATION_180:
-			glRotatef(-180, 0, 0, 1);
-			if(vFlip){
-				glScalef(1, -1, 1);
-				glTranslatef(-width, 0, 0);
-			}else{
-				glTranslatef(-width, -height, 0);
-			}
+	if(ofDoesHWOrientation()){
+		if(vFlip){
+			glScalef(1, -1, 1);
+			glTranslatef(0, -height, 0);
+		}
+	}else{
+		if( orientation == OF_ORIENTATION_UNKNOWN ) orientation = ofGetOrientation();
+		switch(orientation) {
+			case OF_ORIENTATION_180:
+				glRotatef(-180, 0, 0, 1);
+				if(vFlip){
+					glScalef(1, -1, 1);
+					glTranslatef(-width, 0, 0);
+				}else{
+					glTranslatef(-width, -height, 0);
+				}
 
-			break;
+				break;
 
-		case OF_ORIENTATION_90_RIGHT:
-			glRotatef(-90, 0, 0, 1);
-			if(vFlip){
-				glScalef(-1, 1, 1);
-			}else{
-				glScalef(-1, -1, 1);
-				glTranslatef(0, -height, 0);
-			}
-			break;
+			case OF_ORIENTATION_90_RIGHT:
+				glRotatef(-90, 0, 0, 1);
+				if(vFlip){
+					glScalef(-1, 1, 1);
+				}else{
+					glScalef(-1, -1, 1);
+					glTranslatef(0, -height, 0);
+				}
+				break;
 
-		case OF_ORIENTATION_90_LEFT:
-			glRotatef(90, 0, 0, 1);
-			if(vFlip){
-				glScalef(-1, 1, 1);
-				glTranslatef(-width, -height, 0);
-			}else{
-				glScalef(-1, -1, 1);
-				glTranslatef(-width, 0, 0);
-			}
-			break;
+			case OF_ORIENTATION_90_LEFT:
+				glRotatef(90, 0, 0, 1);
+				if(vFlip){
+					glScalef(-1, 1, 1);
+					glTranslatef(-width, -height, 0);
+				}else{
+					glScalef(-1, -1, 1);
+					glTranslatef(-width, 0, 0);
+				}
+				break;
 
-		case OF_ORIENTATION_DEFAULT:
-		default:
-			if(vFlip){
-				glScalef(1, -1, 1);
-				glTranslatef(0, -height, 0);
-			}
-			break;
+			case OF_ORIENTATION_DEFAULT:
+			default:
+				if(vFlip){
+					glScalef(1, -1, 1);
+					glTranslatef(0, -height, 0);
+				}
+				break;
+		}
 	}
 
 }
@@ -547,13 +616,18 @@ bool ofGLRenderer::bClearBg(){
 }
 
 //----------------------------------------------------------
-ofColor & ofGLRenderer::getBgColor(){
+ofFloatColor & ofGLRenderer::getBgColor(){
 	return bgColor;
 }
 
 //----------------------------------------------------------
 void ofGLRenderer::background(const ofColor & c){
-	background ( c.r, c.g, c.b, c.a );
+	bgColor = c;
+	// if we are in not-auto mode, then clear with a bg call...
+	if (bClearBg() == false){
+		glClearColor(bgColor[0],bgColor[1],bgColor[2], bgColor[3]);
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
 }
 
 //----------------------------------------------------------
@@ -568,15 +642,7 @@ void ofGLRenderer::background(int hexColor, float _a){
 
 //----------------------------------------------------------
 void ofGLRenderer::background(int r, int g, int b, int a){
-	bgColor[0] = (float)r / (float)255.0f;
-	bgColor[1] = (float)g / (float)255.0f;
-	bgColor[2] = (float)b / (float)255.0f;
-	bgColor[3] = (float)a / (float)255.0f;
-	// if we are in not-auto mode, then clear with a bg call...
-	if (bClearBg() == false){
-		glClearColor(bgColor[0],bgColor[1],bgColor[2], bgColor[3]);
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	}
+	background(ofColor(r,g,b,a));
 }
 
 //----------------------------------------------------------
@@ -953,7 +1019,7 @@ void ofGLRenderer::drawString(string textString, float x, float y, float z, ofDr
 
 	// (c) enable texture once before we start drawing each char (no point turning it on and off constantly)
 	//We do this because its way faster
-	ofDrawBitmapCharacterStart();
+	ofDrawBitmapCharacterStart(textString.size());
 
 	for(int c = 0; c < len; c++){
 		if(textString[c] == '\n'){
@@ -967,7 +1033,7 @@ void ofGLRenderer::drawString(string textString, float x, float y, float z, ofDr
 			// solves a bug with control characters
 			// getting drawn when they ought to not be
 			ofDrawBitmapCharacter(textString[c], (int)sx, (int)sy);
-
+						
 			sx += fontSize;
 		}
 	}
@@ -987,4 +1053,6 @@ void ofGLRenderer::drawString(string textString, float x, float y, float z, ofDr
 
 	if (hasViewport)
 		ofPopView();
+
+	glBlendFunc(blend_src, blend_dst);
 }
