@@ -30,10 +30,6 @@ void ofDisableSeparateSpecularLight();
 bool ofGetLightingEnabled();
 void ofSetSmoothLighting(bool b);
 void ofSetGlobalAmbientColor(const ofColor& c);
-<<<<<<< HEAD
-void ofSetGlobalAmbientColor(float r, float g, float b, float a=255.f);
-=======
->>>>>>> master
 
 //----------------------------------------
 // Use the public API of ofNode for all transformations
@@ -49,11 +45,7 @@ public:
 	void disable();
 	bool getIsEnabled() const;
 	
-<<<<<<< HEAD
-	void setDirectional(bool b=true);
-=======
 	void setDirectional();
->>>>>>> master
 	bool getIsDirectional() const;
 	
 	void setSpotlight( float spotCutOff=45.f, float exponent=0.f );
@@ -63,21 +55,9 @@ public:
 	
 	void setPointLight();
 	bool getIsPointLight();
-<<<<<<< HEAD
-	
-	void setAttenuation( float constant=2.f, float linear=1.f, float quadratic=0.5f );
-	
-	void setAmbientColor(const ofColor& c);
-	void setAmbientColor(float r, float g, float b, float a=255.f);
-	void setDiffuseColor(const ofColor& c);
-	void setDiffuseColor(float r, float g, float b, float a=255.f);
-	void setSpecularColor(const ofColor& c);
-	void setSpecularColor(float r, float g, float b, float a=255.f);
-=======
 	void setAttenuation( float constant=2.f, float linear=1.f, float quadratic=0.5f );
 	
 	int getType();
->>>>>>> master
 	
 	void setAmbientColor(const ofFloatColor& c);
 	void setDiffuseColor(const ofFloatColor& c);
@@ -101,17 +81,9 @@ public:
 	// this method overrides ofNode to catch the changes and update glLightv(GL_POSITION)
 private:
 
-<<<<<<< HEAD
-	ofColor ambientColor;
-	ofColor diffuseColor;
-	ofColor specularColor;
-	
-	ofLightType lightType;
-=======
 	ofFloatColor ambientColor;
 	ofFloatColor diffuseColor;
 	ofFloatColor specularColor;
->>>>>>> master
 
 	ofLightType lightType;
 	

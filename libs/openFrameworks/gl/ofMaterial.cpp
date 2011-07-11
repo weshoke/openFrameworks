@@ -41,22 +41,6 @@ float ofMaterial::getShininess(){
 	return shininess;
 }
 
-<<<<<<< HEAD
-ofColor ofMaterial::getDiffuseColor() {
-	return ofColor(diffuse.r * 255.f, diffuse.g * 255.f, diffuse.b * 255.f, diffuse.a * 255.f);
-}
-
-ofColor ofMaterial::getAmbientColor() {
-	return ofColor(ambient.r * 255.f, ambient.g * 255.f, ambient.b * 255.f, ambient.a * 255.f);
-}
-
-ofColor ofMaterial::getSpecularColor() {
-	return ofColor(specular.r * 255.f, specular.g * 255.f, specular.b * 255.f, specular.a * 255.f);
-}
-
-ofColor ofMaterial::getEmissiveColor() {
-	return ofColor(emissive.r * 255.f, emissive.g * 255.f, emissive.b * 255.f, emissive.a * 255.f);
-=======
 ofFloatColor ofMaterial::getDiffuseColor() {
 	return diffuse;
 }
@@ -71,7 +55,6 @@ ofFloatColor ofMaterial::getSpecularColor() {
 
 ofFloatColor ofMaterial::getEmissiveColor() {
 	return emissive;
->>>>>>> master
 }
 
 void ofMaterial::begin() {
