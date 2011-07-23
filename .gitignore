@@ -21,6 +21,17 @@ apps/addonsExamples/*/*.xcodeproj
 apps/addonsExamples/*/Project.xcconfig
 apps/addonsExamples/*/openFrameworks-Info.plist
 
+apps/iphoneAddonsExamples/*/*.xcodeproj
+apps/iphoneAddonsExamples/*/Project.xcconfig
+apps/iPhoneAddonsExamples/*/ofxiphone-Info.plist
+apps/iPhoneAddonsExamples/*/iPhone_Prefix.pch
+
+apps/iphoneExamples/*/*.xcodeproj
+apps/iphoneExamples/*/Project.xcconfig
+apps/iPhoneExamples/*/ofxiphone-Info.plist
+apps/iPhoneExamples/*/iPhone_Prefix.pch
+
+
 #codeblocks files
 apps/*/*/*.layout
 apps/*/*/*.depend
@@ -56,9 +67,9 @@ libs/openFrameworks/Debug Mac OS X
 libs/openFrameworks/Release Mac OS X
 apps/*/*/Debug Mac OS X
 apps/*/*/Release Mac OS X
-.DS_Store
 xcuserdata
 project.xcworkspace
+.DS_Store
 
 #Linux
 addons/Debug Linux
@@ -77,6 +88,7 @@ apps/addonsExamples/*/config.make
 
 
 
+<<<<<<< HEAD
 /apps/androidExamples/androidAssimpExample/Makefile
 /apps/androidExamples/androidAudioExample/Makefile
 /apps/androidExamples/androidCameraExample/Makefile
@@ -91,3 +103,18 @@ apps/addonsExamples/*/config.make
 /apps/devApps/linux/Makefile
 /apps/devApps/ofPathExample/Makefile
 /.gitignore
+=======
+/apps/examples/emptyExample/emptyExample.xcodeproj/project.pbxproj
+/apps/examples/eventsExample/eventsExample.xcodeproj/project.pbxproj
+/apps/addonsExamples/ofxCvHaarFinderExample/ofxCvHaarFinderExample.xcodeproj/project.pbxproj
+/apps/addonsExamples/opencvExample/opencvExample.xcodeproj/project.pbxproj
+/apps/examples/polygonExample/polygonExample.xcodeproj/project.pbxproj
+/apps/examples/imageLoaderExample/imageLoaderExample.xcodeproj/project.pbxproj
+/apps/examples/graphicsExample/graphicsExample.xcodeproj/project.pbxproj
+/apps/examples/fontsExample/fontsExample.xcodeproj/project.pbxproj
+/apps/examples/advancedEventsExample/advancedEventsExample.xcodeproj/project.pbxproj
+/apps/devApps/memo3DCameraTestingExample/basic3dExample.xcodeproj/project.pbxproj
+/apps/devApps/_DeployExamples/deployExamples.xcodeproj/project.pbxproj
+/apps/addonsExamples/xmlSettingsExample/xmlSettingsExample.xcodeproj/project.pbxproj
+/apps/addonsExamples/threadedImageLoaderExample/threadedImageLoaderExample.xcodeproj/project.pbxproj
+>>>>>>> master
