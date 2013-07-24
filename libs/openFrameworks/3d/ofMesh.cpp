@@ -1113,6 +1113,8 @@ void ofMesh::setColorForIndices( int startIndex, int endIndex, ofColor color ) {
     }
 }
 
+// Note: endIndex is the invalid index.
+// ie. To get the entire mesh for all of the indices, use getMeshForIndices( 0, getNumIndices() );
 //----------------------------------------------------------
 ofMesh ofMesh::getMeshForIndices( int startIndex, int endIndex ) const {
     int startVertIndex  = 0;
